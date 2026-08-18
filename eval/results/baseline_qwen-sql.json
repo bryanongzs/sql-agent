@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 87.9,
+    "prediction": "SELECT COUNT(order_id) FROM orders;"
+  },
+  {
+    "id": 2,
+    "category": "simple",
+    "status": "wrong_result",
+    "seconds": 4.5,
+    "prediction": "SELECT COUNT(DISTINCT customer_id) FROM customers"
+  },
+  {
+    "id": 3,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 4.1,
+    "prediction": "SELECT COUNT(seller_id) FROM sellers"
+  },
+  {
+    "id": 4,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 5.3,
+    "prediction": "SELECT COUNT(order_id) FROM orders WHERE order_status = 'delivered';"
+  },
+  {
+    "id": 5,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 5.1,
+    "prediction": "SELECT COUNT(order_id) FROM orders WHERE order_status = 'canceled';"
+  }
+]
