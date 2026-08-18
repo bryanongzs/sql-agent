@@ -1,0 +1,76 @@
+TABLE customers (99,441 rows)
+  - customer_id (TEXT)  [e.g. 00012a2ce6f8dcda20d059ce98491703, 000161a058600d5901f007fab4c27140]
+  - customer_unique_id (TEXT)  [e.g. 0000366f3b9a7992bf8c76cfdf3221e2, 0000b849f77a49e4a4ce2b2a4ca5be3f]
+  - customer_zip_code_prefix (INTEGER)  [e.g. 14409, 9790]
+  - customer_city (TEXT)  [e.g. franca, sao bernardo do campo]
+  - customer_state (TEXT)  [e.g. SP, SP]
+
+TABLE geolocation (1,000,163 rows)
+  - geolocation_zip_code_prefix (INTEGER)  [e.g. 1037, 1046]
+  - geolocation_lat (REAL)  [e.g. -23.54562128115268, -23.546081127035535]
+  - geolocation_lng (REAL)  [e.g. -46.63929204800168, -46.64482029837157]
+  - geolocation_city (TEXT)  [e.g. sao paulo, sao paulo]
+  - geolocation_state (TEXT)  [e.g. SP, SP]
+
+TABLE order_items (112,650 rows)
+  - order_id (TEXT)  [e.g. 00010242fe8c5a6d1ba2dd792cb16214, 00018f77f2f0320c557190d7a144bdd3]
+  - order_item_id (INTEGER)  [e.g. 1, 1]
+  - product_id (TEXT)  [e.g. 00066f42aeeb9f3007548bb9d3f33c38, 00088930e925c41fd95ebfe695fd2655]
+  - seller_id (TEXT)  [e.g. 0015a82c2db000af6aaaf3ae2ecb0532, 0015a82c2db000af6aaaf3ae2ecb0532]
+  - shipping_limit_date (TEXT)  [e.g. 2017-09-19 09:45:35, 2017-05-03 11:05:13]
+  - price (REAL)  [e.g. 58.9, 239.9]
+  - freight_value (REAL)  [e.g. 13.29, 19.93]
+
+TABLE order_payments (103,886 rows)
+  - order_id (TEXT)  [e.g. 00010242fe8c5a6d1ba2dd792cb16214, 00018f77f2f0320c557190d7a144bdd3]
+  - payment_sequential (INTEGER)  [e.g. 1, 1]
+  - payment_type (TEXT)  [values: credit_card, boleto, voucher, debit_card, not_defined]
+  - payment_installments (INTEGER)  [e.g. 8, 1]
+  - payment_value (REAL)  [e.g. 99.33, 24.39]
+
+TABLE order_reviews (99,224 rows)
+  - review_id (TEXT)  [e.g. 0001239bc1de2e33cb583967c2ca4c67, 0001cc6860aeaf5b9017fe4131a52e62]
+  - order_id (TEXT)  [e.g. 00010242fe8c5a6d1ba2dd792cb16214, 00018f77f2f0320c557190d7a144bdd3]
+  - review_score (INTEGER)  [values: 4, 5, 1, 3, 2]
+  - review_comment_title (TEXT), 87,656 NULLs  [e.g. recomendo, Super recomendo]
+  - review_comment_message (TEXT), 58,247 NULLs  [e.g. Recebi bem antes do prazo estipulado., Parabéns lojas lannister adorei comprar pela Internet seguro e prático Parabéns a todos feliz Páscoa]
+  - review_creation_date (TEXT)  [e.g. 2018-01-18 00:00:00, 2018-03-10 00:00:00]
+  - review_answer_timestamp (TEXT)  [e.g. 2018-01-18 21:46:59, 2018-03-11 03:05:13]
+
+TABLE orders (99,441 rows)
+  - order_id (TEXT)  [e.g. 00010242fe8c5a6d1ba2dd792cb16214, 00018f77f2f0320c557190d7a144bdd3]
+  - customer_id (TEXT)  [e.g. 00012a2ce6f8dcda20d059ce98491703, 000161a058600d5901f007fab4c27140]
+  - order_status (TEXT)  [values: delivered, invoiced, shipped, processing, unavailable, canceled, created, approved]
+  - order_purchase_timestamp (TEXT)  [e.g. 2017-10-02 10:56:33, 2018-07-24 20:41:37]
+  - order_approved_at (TEXT), 160 NULLs  [e.g. 2017-10-02 11:07:15, 2018-07-26 03:24:27]
+  - order_delivered_carrier_date (TEXT), 1,783 NULLs  [e.g. 2017-10-04 19:55:00, 2018-07-26 14:31:00]
+  - order_delivered_customer_date (TEXT), 2,965 NULLs  [e.g. 2017-10-10 21:25:13, 2018-08-07 15:27:45]
+  - order_estimated_delivery_date (TEXT)  [e.g. 2017-10-18 00:00:00, 2018-08-13 00:00:00]
+
+TABLE product_category_name_translation (71 rows)
+  - product_category_name (TEXT)  [e.g. beleza_saude, informatica_acessorios]
+  - product_category_name_english (TEXT)  [e.g. health_beauty, computers_accessories]
+
+TABLE products (32,951 rows)
+  - product_id (TEXT)  [e.g. 00066f42aeeb9f3007548bb9d3f33c38, 00088930e925c41fd95ebfe695fd2655]
+  - product_category_name (TEXT), 610 NULLs  [e.g. perfumaria, artes]
+  - product_name_lenght (REAL), 610 NULLs  [e.g. 40.0, 44.0]
+  - product_description_lenght (REAL), 610 NULLs  [e.g. 287.0, 276.0]
+  - product_photos_qty (REAL), 610 NULLs  [e.g. 1.0, 1.0]
+  - product_weight_g (REAL), 2 NULLs  [e.g. 225.0, 1000.0]
+  - product_length_cm (REAL), 2 NULLs  [e.g. 16.0, 30.0]
+  - product_height_cm (REAL), 2 NULLs  [e.g. 10.0, 18.0]
+  - product_width_cm (REAL), 2 NULLs  [e.g. 14.0, 20.0]
+
+TABLE sellers (3,095 rows)
+  - seller_id (TEXT)  [e.g. 0015a82c2db000af6aaaf3ae2ecb0532, 001cca7ae9ae17fb1caed9dfb1094831]
+  - seller_zip_code_prefix (INTEGER)  [e.g. 13023, 13844]
+  - seller_city (TEXT)  [e.g. campinas, mogi guacu]
+  - seller_state (TEXT)  [e.g. SP, SP]
+
+SHARED COLUMNS (likely join keys):
+  customer_id: customers, orders
+  order_id: order_items, order_payments, order_reviews, orders
+  product_category_name: product_category_name_translation, products
+  product_id: order_items, products
+  seller_id: order_items, sellers
