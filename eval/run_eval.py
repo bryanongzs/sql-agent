@@ -1,12 +1,16 @@
-"""Evaluate text-to-SQL by execution accuracy. Run from the project root.
+r"""Evaluate text-to-SQL by execution accuracy. Run from the project root.
 
   python eval\run_eval.py --check-gold            (validate the gold queries)
-  python eval\run_eval.py --baseline --limit 5    (try a few questions)
-  python eval\run_eval.py --baseline              (full run, slow)
+  python eval\run_eval.py --baseline              (one-shot, full run)
+  python eval\run_eval.py --agent                 (retry loop, full run)
+  python eval\run_eval.py --explore               (retry loop + exploration)
+  add --questions eval\heldout.json to use the held-out set
+  add --limit N to run only the first N questions
+Set USE_NOTES=1 to include data\schema_notes.txt in the prompt.
 
-Matching rules: column names are ignored; row order is ignored unless the
-question is marked "ordered"; floats match within 0.051 (gold rounds to at
-most 1 decimal); extra or missing columns count as wrong.
+Matching rules (strict): column names are ignored; row order is ignored unless
+the question is marked "ordered"; floats match within 0.051; extra or missing
+columns count as wrong; text '11' does not equal integer 11.
 """
 import argparse
 import json
@@ -21,13 +25,13 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from db import QueryError, run_query  # noqa: E402
 
-QUESTIONS = ROOT / "eval" / "questions.json"
+DEFAULT_QUESTIONS = ROOT / "eval" / "questions.json"
 RESULTS_DIR = ROOT / "eval" / "results"
 TOLERANCE = 0.051
 
 
-def load_questions() -> list:
-    return json.loads(QUESTIONS.read_text(encoding="utf-8"))
+def load_questions(path: Path) -> list:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def cells_equal(a, b) -> bool:
@@ -83,10 +87,19 @@ def score(q: dict, pred: dict) -> str:
     return "correct" if results_match(got["rows"], want["rows"], q.get("ordered", False)) else "wrong_result"
 
 
-def run_baseline(questions: list, limit) -> None:
-    from baseline import generate
+def run_eval(questions: list, limit, mode: str, q_stem: str) -> None:
+    if mode == "agent":
+        from agent import run_agent as generate
+    elif mode == "explore":
+        from agent_explore import run_agent as generate
+    elif mode == "checked":
+        from agent_checked import run_agent as generate
+    else:
+        from baseline import generate
 
     model = os.environ.get("LLM_MODEL", "unknown")
+    notes = os.environ.get("USE_NOTES") == "1"
+    print(f"mode={mode} model={model} notes={'ON' if notes else 'off'} questions={q_stem}\n")
     records = []
     for q in questions[:limit]:
         t0 = time.time()
@@ -97,9 +110,11 @@ def run_baseline(questions: list, limit) -> None:
             pred = {"kind": "error", "sql": None, "raw": str(e)}
             status = "llm_error"
         secs = round(time.time() - t0, 1)
-        print(f'{q["id"]:>3} {status:<20} {secs:>6}s  {q["question"][:60]}')
+        steps = pred.get("steps", 1)
+        print(f'{q["id"]:>3} {status:<20} {secs:>6}s  steps={steps}  {q["question"][:50]}')
         records.append({"id": q["id"], "category": q["category"], "status": status,
-                        "seconds": secs, "prediction": pred.get("sql") or pred.get("raw")})
+                        "seconds": secs, "steps": steps,
+                        "prediction": pred.get("sql") or pred.get("raw")})
 
     total = len(records)
     correct = sum(r["status"] == "correct" for r in records)
@@ -113,7 +128,12 @@ def run_baseline(questions: list, limit) -> None:
     print("Statuses:", dict(Counter(r["status"] for r in records)))
 
     RESULTS_DIR.mkdir(exist_ok=True)
-    out = RESULTS_DIR / f"baseline_{model.replace(':', '_')}.json"
+    name = f"{mode}_{model.replace(':', '_')}"
+    if notes:
+        name += "_notes"
+    if q_stem != "questions":
+        name += f"_{q_stem}"
+    out = RESULTS_DIR / f"{name}.json"
     out.write_text(json.dumps(records, indent=2), encoding="utf-8")
     print(f"Saved {out}")
 
@@ -122,12 +142,22 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-gold", action="store_true")
     ap.add_argument("--baseline", action="store_true")
+    ap.add_argument("--agent", action="store_true")
+    ap.add_argument("--explore", action="store_true")
+    ap.add_argument("--checked", action="store_true")
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS)
     args = ap.parse_args()
-    qs = load_questions()
+    qs = load_questions(args.questions)
     if args.check_gold:
         check_gold(qs)
     elif args.baseline:
-        run_baseline(qs, args.limit)
+        run_eval(qs, args.limit, "baseline", args.questions.stem)
+    elif args.agent:
+        run_eval(qs, args.limit, "agent", args.questions.stem)
+    elif args.explore:
+        run_eval(qs, args.limit, "explore", args.questions.stem)
+    elif args.checked:
+        run_eval(qs, args.limit, "checked", args.questions.stem)
     else:
         ap.print_help()

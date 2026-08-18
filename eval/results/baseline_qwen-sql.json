@@ -3,35 +3,322 @@
     "id": 1,
     "category": "simple",
     "status": "correct",
-    "seconds": 87.9,
+    "seconds": 88.8,
     "prediction": "SELECT COUNT(order_id) FROM orders;"
   },
   {
     "id": 2,
     "category": "simple",
     "status": "wrong_result",
-    "seconds": 4.5,
+    "seconds": 4.6,
     "prediction": "SELECT COUNT(DISTINCT customer_id) FROM customers"
   },
   {
     "id": 3,
     "category": "simple",
     "status": "correct",
-    "seconds": 4.1,
+    "seconds": 4.0,
     "prediction": "SELECT COUNT(seller_id) FROM sellers"
   },
   {
     "id": 4,
     "category": "simple",
     "status": "correct",
-    "seconds": 5.3,
+    "seconds": 5.4,
     "prediction": "SELECT COUNT(order_id) FROM orders WHERE order_status = 'delivered';"
   },
   {
     "id": 5,
     "category": "simple",
     "status": "correct",
-    "seconds": 5.1,
+    "seconds": 5.2,
     "prediction": "SELECT COUNT(order_id) FROM orders WHERE order_status = 'canceled';"
+  },
+  {
+    "id": 6,
+    "category": "aggregate",
+    "status": "correct",
+    "seconds": 7.3,
+    "prediction": "SELECT order_status, COUNT(order_id) AS order_count\nFROM orders\nGROUP BY order_status;"
+  },
+  {
+    "id": 7,
+    "category": "aggregate",
+    "status": "correct",
+    "seconds": 6.3,
+    "prediction": "SELECT payment_type FROM order_payments GROUP BY payment_type ORDER BY COUNT(*) DESC LIMIT 1"
+  },
+  {
+    "id": 8,
+    "category": "aggregate",
+    "status": "correct",
+    "seconds": 5.6,
+    "prediction": "SELECT AVG(review_score) AS average_review_score FROM order_reviews;"
+  },
+  {
+    "id": 9,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 5.7,
+    "prediction": "SELECT COUNT(review_id) FROM order_reviews WHERE review_score = 1;"
+  },
+  {
+    "id": 10,
+    "category": "aggregate",
+    "status": "correct",
+    "seconds": 5.5,
+    "prediction": "SELECT ROUND(SUM(payment_value), 2) FROM order_payments"
+  },
+  {
+    "id": 11,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 5.4,
+    "prediction": "SELECT COUNT(customer_id) FROM customers WHERE customer_state = 'SP';"
+  },
+  {
+    "id": 12,
+    "category": "aggregate",
+    "status": "correct",
+    "seconds": 8.0,
+    "prediction": "SELECT seller_state, COUNT(seller_id) AS seller_count FROM sellers GROUP BY seller_state ORDER BY seller_count DESC LIMIT 3"
+  },
+  {
+    "id": 13,
+    "category": "aggregate",
+    "status": "correct",
+    "seconds": 5.9,
+    "prediction": "SELECT customer_state FROM customers GROUP BY customer_state ORDER BY COUNT(*) DESC LIMIT 1"
+  },
+  {
+    "id": 14,
+    "category": "aggregate",
+    "status": "correct",
+    "seconds": 5.3,
+    "prediction": "SELECT ROUND(AVG(price), 2) FROM order_items"
+  },
+  {
+    "id": 15,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 4.1,
+    "prediction": "SELECT MAX(price) FROM order_items"
+  },
+  {
+    "id": 16,
+    "category": "tricky",
+    "status": "correct",
+    "seconds": 6.2,
+    "prediction": "SELECT COUNT(order_id) FROM orders WHERE order_purchase_timestamp LIKE '2017%'"
+  },
+  {
+    "id": 17,
+    "category": "tricky",
+    "status": "correct",
+    "seconds": 6.6,
+    "prediction": "SELECT COUNT(order_id) FROM orders WHERE order_purchase_timestamp LIKE '2017-11-%'"
+  },
+  {
+    "id": 18,
+    "category": "tricky",
+    "status": "correct",
+    "seconds": 7.8,
+    "prediction": "SELECT COUNT(order_id) FROM orders WHERE order_status = 'delivered' AND order_delivered_customer_date > order_estimated_delivery_date;"
+  },
+  {
+    "id": 19,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 5.6,
+    "prediction": "SELECT COUNT(order_id) FROM orders WHERE order_delivered_customer_date IS NULL"
+  },
+  {
+    "id": 20,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 4.7,
+    "prediction": "SELECT COUNT(*) FROM products WHERE product_category_name IS NULL"
+  },
+  {
+    "id": 21,
+    "category": "join",
+    "status": "wrong_result",
+    "seconds": 9.4,
+    "prediction": "SELECT COUNT(*) FROM products AS p JOIN product_category_name_translation AS pct ON p.product_category_name = pct.product_category_name WHERE pct.product_category_name_english = 'perfumary'"
+  },
+  {
+    "id": 22,
+    "category": "join",
+    "status": "sql_error",
+    "seconds": 16.5,
+    "prediction": "SELECT p.product_category_name_english, COUNT(oi.product_id) AS total_items_sold\nFROM order_items oi\nJOIN products p ON oi.product_id = p.product_id\nJOIN product_category_name_translation pct ON p.product_category_name = pct.product_category_name\nGROUP BY p.product_category_name_english\nORDER BY total_items_sold DESC\nLIMIT 5"
+  },
+  {
+    "id": 23,
+    "category": "join",
+    "status": "sql_error",
+    "seconds": 14.9,
+    "prediction": "SELECT p.product_category_name_english, SUM(oi.price) as total_price\nFROM order_items oi\nJOIN products p ON oi.product_id = p.product_id\nJOIN product_category_name_translation pct ON p.product_category_name = pct.product_category_name\nGROUP BY p.product_category_name_english\nORDER BY total_price DESC\nLIMIT 1"
+  },
+  {
+    "id": 24,
+    "category": "join",
+    "status": "wrong_result",
+    "seconds": 7.2,
+    "prediction": "SELECT seller_id FROM order_items GROUP BY seller_id ORDER BY SUM(order_item_id) DESC LIMIT 1"
+  },
+  {
+    "id": 25,
+    "category": "join",
+    "status": "correct",
+    "seconds": 11.2,
+    "prediction": "SELECT seller_id, ROUND(SUM(price), 2) AS total_price_sold\nFROM order_items\nGROUP BY seller_id\nORDER BY total_price_sold DESC\nLIMIT 3"
+  },
+  {
+    "id": 26,
+    "category": "join",
+    "status": "sql_error",
+    "seconds": 9.9,
+    "prediction": "SELECT ROUND(AVG(order_items.freight_value), 2) FROM order_items JOIN orders ON order_items.order_id = orders.order_id WHERE orders.customer_state = 'RJ'"
+  },
+  {
+    "id": 27,
+    "category": "aggregate",
+    "status": "wrong_result",
+    "seconds": 9.0,
+    "prediction": "SELECT COUNT(order_id) FROM order_items WHERE order_id IN (SELECT order_id FROM order_items GROUP BY order_id HAVING COUNT(order_item_id) > 1)"
+  },
+  {
+    "id": 28,
+    "category": "join",
+    "status": "correct",
+    "seconds": 12.4,
+    "prediction": "SELECT ROUND(AVG(review_score), 2) FROM orders AS o JOIN order_reviews AS r ON o.order_id = r.order_id WHERE order_status = 'delivered' AND order_delivered_customer_date > order_estimated_delivery_date"
+  },
+  {
+    "id": 29,
+    "category": "tricky",
+    "status": "wrong_result",
+    "seconds": 11.1,
+    "prediction": "SELECT COUNT(DISTINCT customer_id) FROM orders WHERE customer_id IN (SELECT customer_id FROM orders GROUP BY customer_id HAVING COUNT(order_id) > 1)"
+  },
+  {
+    "id": 30,
+    "category": "aggregate",
+    "status": "correct",
+    "seconds": 6.9,
+    "prediction": "SELECT AVG(payment_installments) AS average_installments FROM order_payments WHERE payment_type = 'credit_card'"
+  },
+  {
+    "id": 31,
+    "category": "tricky",
+    "status": "wrong_result",
+    "seconds": 12.0,
+    "prediction": "SELECT strftime('%m', order_purchase_timestamp) AS month_number, COUNT(order_id) AS order_count\nFROM orders\nWHERE order_purchase_timestamp LIKE '2017-%'\nGROUP BY month_number\nORDER BY order_count DESC\nLIMIT 1;"
+  },
+  {
+    "id": 32,
+    "category": "join",
+    "status": "wrong_result",
+    "seconds": 17.9,
+    "prediction": "SELECT c.customer_state, SUM(p.payment_value) AS total_payment_value\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nJOIN order_payments p ON o.order_id = p.order_id\nGROUP BY c.customer_state\nORDER BY total_payment_value DESC\nLIMIT 1;"
+  },
+  {
+    "id": 33,
+    "category": "tricky",
+    "status": "wrong_result",
+    "seconds": 6.3,
+    "prediction": "SELECT COUNT(order_id) FROM order_payments WHERE payment_installments > 1"
+  },
+  {
+    "id": 34,
+    "category": "tricky",
+    "status": "correct",
+    "seconds": 15.9,
+    "prediction": "SELECT ROUND(SUM(CASE WHEN order_delivered_customer_date > order_estimated_delivery_date THEN 1 ELSE 0 END) * 100.0 / COUNT(order_id), 2) AS percentage FROM orders WHERE order_status = 'delivered' AND order_delivered_customer_date IS NOT NULL AND order_estimated_delivery_date IS NOT NULL"
+  },
+  {
+    "id": 35,
+    "category": "tricky",
+    "status": "correct",
+    "seconds": 11.6,
+    "prediction": "SELECT ROUND(AVG(julianday(orders.order_delivered_customer_date) - julianday(orders.order_purchase_timestamp)), 1) AS average_days\nFROM orders\nWHERE orders.order_status = 'delivered';"
+  },
+  {
+    "id": 36,
+    "category": "join",
+    "status": "correct",
+    "seconds": 6.0,
+    "prediction": "SELECT product_id FROM order_items GROUP BY product_id ORDER BY COUNT(*) DESC LIMIT 1"
+  },
+  {
+    "id": 37,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 4.7,
+    "prediction": "SELECT COUNT(DISTINCT customer_city) FROM customers"
+  },
+  {
+    "id": 38,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 4.4,
+    "prediction": "SELECT MAX(product_weight_g) FROM products"
+  },
+  {
+    "id": 39,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 5.5,
+    "prediction": "SELECT COUNT(review_id) FROM order_reviews WHERE review_comment_message IS NOT NULL"
+  },
+  {
+    "id": 40,
+    "category": "join",
+    "status": "wrong_result",
+    "seconds": 9.2,
+    "prediction": "SELECT COUNT(order_id) FROM order_items WHERE order_id IN (SELECT order_id FROM order_items GROUP BY order_id HAVING COUNT(DISTINCT seller_id) > 1)"
+  },
+  {
+    "id": 41,
+    "category": "refuse",
+    "status": "correct",
+    "seconds": 5.7,
+    "prediction": "REFUSE: This query cannot be answered from this database, or asks to change data."
+  },
+  {
+    "id": 42,
+    "category": "refuse",
+    "status": "correct",
+    "seconds": 6.2,
+    "prediction": "REFUSE: The database schema does not include columns for the full name of the customer."
+  },
+  {
+    "id": 43,
+    "category": "refuse",
+    "status": "should_have_refused",
+    "seconds": 12.4,
+    "prediction": "SELECT p.product_category_name, SUM((oi.price - oi.freight_value) * oi.quantity) / SUM(oi.price * oi.quantity) AS profit_margin\nFROM order_items oi\nJOIN products p ON oi.product_id = p.product_id\nGROUP BY p.product_category_name;"
+  },
+  {
+    "id": 44,
+    "category": "refuse",
+    "status": "correct",
+    "seconds": 5.0,
+    "prediction": "REFUSE: The query cannot change data in the database."
+  },
+  {
+    "id": 45,
+    "category": "refuse",
+    "status": "correct",
+    "seconds": 5.1,
+    "prediction": "REFUSE: The database does not contain weather data."
+  },
+  {
+    "id": 46,
+    "category": "refuse",
+    "status": "correct",
+    "seconds": 6.2,
+    "prediction": "REFUSE: The provided database schema does not include a table or column for customer email addresses."
   }
 ]
