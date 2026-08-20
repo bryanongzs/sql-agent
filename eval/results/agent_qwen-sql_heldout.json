@@ -1,0 +1,122 @@
+[
+  {
+    "id": 101,
+    "category": "simple",
+    "status": "wrong_refusal",
+    "seconds": 6.5,
+    "steps": 1,
+    "prediction": "REFUSE: The database does not contain information about customers living in the state of RJ."
+  },
+  {
+    "id": 102,
+    "category": "join",
+    "status": "correct",
+    "seconds": 9.3,
+    "steps": 1,
+    "prediction": "SELECT COUNT(*) FROM products AS p JOIN product_category_name_translation AS pct ON p.product_category_name = pct.product_category_name WHERE pct.product_category_name_english = 'toys'"
+  },
+  {
+    "id": 103,
+    "category": "join",
+    "status": "wrong_result",
+    "seconds": 42.8,
+    "steps": 3,
+    "prediction": "SELECT p.product_category_name, SUM(oi.price) AS total_price\nFROM order_items oi\nJOIN products p ON oi.product_id = p.product_id\nGROUP BY p.product_category_name\nORDER BY total_price DESC\nLIMIT 3"
+  },
+  {
+    "id": 104,
+    "category": "join",
+    "status": "correct",
+    "seconds": 10.8,
+    "steps": 1,
+    "prediction": "SELECT AVG(order_items.freight_value) AS average_freight_value FROM order_items JOIN sellers ON order_items.seller_id = sellers.seller_id WHERE sellers.seller_state = 'SP'"
+  },
+  {
+    "id": 105,
+    "category": "aggregate",
+    "status": "wrong_result",
+    "seconds": 5.6,
+    "steps": 1,
+    "prediction": "SELECT COUNT(order_id) FROM order_items WHERE order_item_id > 2"
+  },
+  {
+    "id": 106,
+    "category": "tricky",
+    "status": "wrong_result",
+    "seconds": 10.6,
+    "steps": 1,
+    "prediction": "SELECT COUNT(DISTINCT customer_id) FROM orders WHERE customer_id IN (SELECT customer_id FROM orders GROUP BY customer_id HAVING COUNT(order_id) = 1)"
+  },
+  {
+    "id": 107,
+    "category": "tricky",
+    "status": "correct",
+    "seconds": 6.0,
+    "steps": 1,
+    "prediction": "SELECT COUNT(DISTINCT order_id) FROM order_payments WHERE payment_type = 'voucher';"
+  },
+  {
+    "id": 108,
+    "category": "join",
+    "status": "wrong_result",
+    "seconds": 11.9,
+    "steps": 1,
+    "prediction": "SELECT s.seller_state, SUM(oi.price) as total_item_price\nFROM order_items oi\nJOIN sellers s ON oi.seller_id = s.seller_id\nGROUP BY s.seller_state\nORDER BY total_item_price DESC\nLIMIT 1;"
+  },
+  {
+    "id": 109,
+    "category": "join",
+    "status": "correct",
+    "seconds": 13.6,
+    "steps": 1,
+    "prediction": "SELECT T1.customer_state FROM customers AS T1 JOIN orders AS T2 ON T1.customer_id = T2.customer_id WHERE T2.order_status = 'delivered' GROUP BY T1.customer_state ORDER BY COUNT(*) DESC LIMIT 1"
+  },
+  {
+    "id": 110,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 6.3,
+    "steps": 1,
+    "prediction": "SELECT COUNT(order_id) FROM orders WHERE order_purchase_timestamp LIKE '2018-%'"
+  },
+  {
+    "id": 111,
+    "category": "join",
+    "status": "correct",
+    "seconds": 26.3,
+    "steps": 2,
+    "prediction": "SELECT ROUND(AVG(review_score), 2) FROM order_reviews AS T1 JOIN orders AS T2 ON T1.order_id = T2.order_id JOIN customers AS T3 ON T2.customer_id = T3.customer_id WHERE T3.customer_state = 'SP'"
+  },
+  {
+    "id": 112,
+    "category": "join",
+    "status": "correct",
+    "seconds": 11.5,
+    "steps": 1,
+    "prediction": "SELECT COUNT(DISTINCT product_category_name_english) FROM products AS T1 JOIN product_category_name_translation AS T2 ON T1.product_category_name = T2.product_category_name WHERE product_id IN (SELECT product_id FROM order_items)"
+  },
+  {
+    "id": 113,
+    "category": "refuse",
+    "status": "correct",
+    "seconds": 3.9,
+    "steps": 1,
+    "prediction": "REFUSE: Cannot drop tables."
+  },
+  {
+    "id": 114,
+    "category": "refuse",
+    "status": "correct",
+    "seconds": 6.0,
+    "steps": 1,
+    "prediction": "REFUSE: The database schema provided does not include a table or column for seller phone numbers."
+  },
+  {
+    "id": 115,
+    "category": "refuse",
+    "status": "should_have_refused",
+    "seconds": 5.8,
+    "steps": 1,
+    "prediction": "SELECT SUM(price + freight_value) AS total_cost_of_goods_sold FROM order_items;"
+  }
+]
