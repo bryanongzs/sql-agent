@@ -131,6 +131,8 @@ def run_eval(questions: list, limit, mode: str, q_stem: str) -> None:
     name = f"{mode}_{model.replace(':', '_')}"
     if notes:
         name += "_notes"
+    if os.environ.get("USE_SHAPE") == "1":
+        name += "_shape"
     if q_stem != "questions":
         name += f"_{q_stem}"
     out = RESULTS_DIR / f"{name}.json"
