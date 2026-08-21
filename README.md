@@ -1,6 +1,6 @@
 # Olist SQL agent: text-to-SQL with a local LLM
 
-Ask a question about a database in plain English. A local model (via Ollama) writes SQLite SQL, the agent runs it on a **read-only** connection, reads errors and suspicious results, and retries. The point of this repo is the **measurement**: a fixed question set, strict scoring, and an honest account of what helped, what didn't, and where it still fails.
+Ask a question about a database in plain English. A local model (via Ollama) writes SQLite SQL, the agent runs it on a **read-only** connection, reads errors and suspicious results, and retries. It also accepts your own CSV or SQLite files (see "Bring your own data"). The point of this repo is the **measurement**: a fixed question set, strict scoring, and an honest account of what helped, what didn't, and where it still fails.
 
 ![demo](docs/demo.gif) <!-- TODO: record a short GIF of `python src\app.py` and save it as docs\demo.gif -->
 
@@ -47,9 +47,26 @@ Analysis of the 7B one-shot baseline (13 of 46 questions failed), checked by han
 ## Limitations
 
 - **Small eval set.** 46 main questions plus 15 held-out. The code-side hints were designed after seeing failures on the main set, so main-set gains are flattered. The held-out questions use the same database and were also written after seeing those failures, so they are "held out from the hints", not independent.
-- **One database.** Nothing here tests a new, unseen database. The agent code reads the schema at runtime, but I have not measured it on anything except Olist.
+- **Only one database is measured at scale.** All the numbers in the results table are on Olist. The upload feature (below) was tried on one other dataset with a handful of questions, which shows it can work on new data but is too small to give a reliable accuracy figure.
 - **Gold queries** were drafted with an AI assistant and verified by me against the data. Some questions may still be ambiguous (ties, "most" by rows vs by orders).
 - **Local models only.** Results are for the named Qwen models. A stronger hosted model would likely score higher; I did not measure one.
+
+## Bring your own data
+
+The demo (`python src\app.py`) can also answer questions about your own data. Open **Use your own data**, upload up to 10 CSV files (50 MB each) or one SQLite file, and click **Load my data**. No hand-written notes are needed.
+
+How it works (`src/schema_tools.py`):
+- CSVs are loaded into a temporary SQLite file, with column names cleaned up and duplicates made unique. A single `.db` file is used as it is.
+- The schema description is generated from the data: row counts, column types, NULL counts, a few sample values per column, declared foreign keys if there are any, and a list of column names shared between tables (likely join keys). If the description gets too long for the model's context, the sample values are dropped.
+- The same agent, safety layer and code-side hints run on the upload. Queries use the read-only connection, so uploaded data can't be modified.
+
+**What I tested.** I tried it on one other dataset: **[TODO: dataset name, number of tables, license]**, with **[TODO: N]** questions whose answers I worked out by hand from the CSVs before asking. Result: **[TODO: X of N correct]** with `[TODO: model name]`. **[TODO: 1-2 sentences on what failed, e.g. wrong join, double counting, a question that should have been refused.]**
+
+**Limits, stated plainly:**
+- This is a small test, not a benchmark. It shows the pipeline works on data it was not built for. It does not give a reliable accuracy number.
+- CSVs have no declared keys, so the agent guesses joins from matching column names. Tables whose keys have different names, or columns whose meaning is not obvious from the name (like Olist's `customer_id`), are where I'd expect it to fail.
+- Your files stay on your machine, but the schema, including a few sample values per column, is sent to whatever server `LLM_BASE_URL` points at. With local Ollama that is your own computer.
+- Not supported: schema-only upload (without data there is nothing to run), and a mix of CSV and SQLite files.
 
 ## Safety
 
@@ -97,6 +114,6 @@ Any OpenAI-compatible server works: the code only reads `LLM_BASE_URL`, `LLM_API
 
 ## Layout
 
-- `src/`: `db.py` (safe query runner), `baseline.py` (one-shot), `agent.py` (retry loop), `agent_checked.py` (retry loop + hints), `agent_explore.py` (negative result), `app.py` (Gradio demo), `build_db.py`, `describe_schema.py`
+- `src/`: `db.py` (safe query runner), `baseline.py` (one-shot), `agent.py` (retry loop), `agent_checked.py` (retry loop + hints), `agent_explore.py` (negative result), `schema_tools.py` (upload loading and schema generation), `app.py` (Gradio demo), `build_db.py`, `describe_schema.py`
 - `eval/`: `questions.json`, `heldout.json`, `run_eval.py`, `show_failures.py`, `summary.py`, `results/` (every run's per-question output)
-- `tests/`: safety-layer and scoring tests
+- `tests/`: safety-layer, scoring and upload tests
