@@ -1,0 +1,122 @@
+[
+  {
+    "id": 101,
+    "category": "simple",
+    "status": "wrong_result",
+    "seconds": 164.8,
+    "steps": 1,
+    "prediction": "SELECT COUNT(DISTINCT customer_id) \nFROM customers \nWHERE customer_state = 'RJ';"
+  },
+  {
+    "id": 102,
+    "category": "join",
+    "status": "correct",
+    "seconds": 24.3,
+    "steps": 1,
+    "prediction": "SELECT COUNT(*) \nFROM products \nJOIN product_category_name_translation \nON products.product_category_name = product_category_name_translation.product_category_name \nWHERE product_category_name_translation.product_category_name_english = 'toys';"
+  },
+  {
+    "id": 103,
+    "category": "join",
+    "status": "sql_error",
+    "seconds": 55.6,
+    "steps": 1,
+    "prediction": "SELECT \n    p.product_category_name_english, \n    ROUND(SUM(oi.price), 2) AS total_price\nFROM \n    order_items oi\nJOIN \n    products p ON oi.product_id = p.product_id\nJOIN \n    product_category_name_translation t ON p.product_category_name = t.product_category_name\nGROUP BY \n    p.product_category_name_english\nORDER BY \n    total_price DESC\nLIMIT 3;"
+  },
+  {
+    "id": 104,
+    "category": "join",
+    "status": "wrong_result",
+    "seconds": 27.3,
+    "steps": 1,
+    "prediction": "SELECT ROUND(AVG(price), 2) AS average_freight_value\nFROM order_items\nJOIN sellers ON order_items.seller_id = sellers.seller_id\nWHERE sellers.seller_state = 'SP';"
+  },
+  {
+    "id": 105,
+    "category": "aggregate",
+    "status": "wrong_result",
+    "seconds": 17.8,
+    "steps": 1,
+    "prediction": "SELECT COUNT(order_id) \nFROM order_items \nGROUP BY order_id \nHAVING COUNT(order_item_id) > 2;"
+  },
+  {
+    "id": 106,
+    "category": "tricky",
+    "status": "wrong_result",
+    "seconds": 20.4,
+    "steps": 1,
+    "prediction": "SELECT COUNT(DISTINCT customer_id) \nFROM orders \nGROUP BY customer_id \nHAVING COUNT(order_id) = 1;"
+  },
+  {
+    "id": 107,
+    "category": "tricky",
+    "status": "correct",
+    "seconds": 14.6,
+    "steps": 1,
+    "prediction": "SELECT COUNT(DISTINCT order_id) \nFROM order_payments \nWHERE payment_type = 'voucher';"
+  },
+  {
+    "id": 108,
+    "category": "join",
+    "status": "correct",
+    "seconds": 26.0,
+    "steps": 1,
+    "prediction": "SELECT s.seller_state\nFROM sellers s\nJOIN order_items oi ON s.seller_id = oi.seller_id\nGROUP BY s.seller_state\nORDER BY SUM(oi.price) DESC\nLIMIT 1;"
+  },
+  {
+    "id": 109,
+    "category": "join",
+    "status": "correct",
+    "seconds": 31.8,
+    "steps": 1,
+    "prediction": "SELECT c.customer_state\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nWHERE o.order_status = 'delivered'\nGROUP BY c.customer_state\nORDER BY COUNT(o.order_id) DESC\nLIMIT 1;"
+  },
+  {
+    "id": 110,
+    "category": "simple",
+    "status": "correct",
+    "seconds": 17.6,
+    "steps": 1,
+    "prediction": "SELECT COUNT(*) \nFROM orders \nWHERE strftime('%Y', order_purchase_timestamp) = '2018';"
+  },
+  {
+    "id": 111,
+    "category": "join",
+    "status": "correct",
+    "seconds": 38.1,
+    "steps": 1,
+    "prediction": "SELECT ROUND(AVG(review_score), 2) AS average_review_score\nFROM order_reviews\nJOIN orders ON order_reviews.order_id = orders.order_id\nJOIN customers ON orders.customer_id = customers.customer_id\nWHERE customers.customer_state = 'SP';"
+  },
+  {
+    "id": 112,
+    "category": "join",
+    "status": "correct",
+    "seconds": 31.9,
+    "steps": 1,
+    "prediction": "SELECT COUNT(DISTINCT t1.product_category_name_english) \nFROM product_category_name_translation t1 \nJOIN products t2 ON t1.product_category_name = t2.product_category_name \nJOIN order_items t3 ON t2.product_id = t3.product_id;"
+  },
+  {
+    "id": 113,
+    "category": "refuse",
+    "status": "correct",
+    "seconds": 10.6,
+    "steps": 1,
+    "prediction": "REFUSE: The query cannot be executed as it asks to change data."
+  },
+  {
+    "id": 114,
+    "category": "refuse",
+    "status": "correct",
+    "seconds": 12.4,
+    "steps": 1,
+    "prediction": "REFUSE: The database schema does not include any information about sellers' phone numbers."
+  },
+  {
+    "id": 115,
+    "category": "refuse",
+    "status": "should_have_refused",
+    "seconds": 12.3,
+    "steps": 1,
+    "prediction": "SELECT SUM(price) AS total_cost_of_goods_sold\nFROM order_items;"
+  }
+]
