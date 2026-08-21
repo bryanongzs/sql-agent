@@ -1,6 +1,7 @@
-"""Safe query execution against the SQLite database.
+r"""Safe query execution against a SQLite database.
 
 Safety: read-only connection, SELECT/WITH only, row cap, time limit.
+db_path defaults to the Olist database; pass another path for uploaded data.
 """
 import sqlite3
 import time
@@ -17,7 +18,14 @@ class QueryError(Exception):
     """Raised when a query is rejected or fails. The message goes back to the agent."""
 
 
-def run_query(sql: str, max_rows: int = MAX_ROWS, timeout: float = TIMEOUT_SECONDS) -> dict:
+def connect_ro(db_path=None) -> sqlite3.Connection:
+    """Open a read-only connection. mode=ro means even a sneaky write fails."""
+    path = Path(db_path) if db_path else DB_PATH
+    return sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)
+
+
+def run_query(sql: str, max_rows: int = MAX_ROWS, timeout: float = TIMEOUT_SECONDS,
+              db_path=None) -> dict:
     cleaned = sql.strip().rstrip(";").strip()
     first_word = cleaned.split(None, 1)[0].upper() if cleaned else ""
     if first_word not in ("SELECT", "WITH"):
@@ -25,8 +33,7 @@ def run_query(sql: str, max_rows: int = MAX_ROWS, timeout: float = TIMEOUT_SECON
     if ";" in cleaned:
         raise QueryError("Only a single statement is allowed.")
 
-    # mode=ro means even a sneaky write fails at the database level
-    conn = sqlite3.connect(f"file:{DB_PATH.as_posix()}?mode=ro", uri=True)
+    conn = connect_ro(db_path)
     deadline = time.monotonic() + timeout
     # returning 1 from the handler aborts the running query
     conn.set_progress_handler(lambda: 1 if time.monotonic() > deadline else 0, 100_000)

@@ -2,59 +2,70 @@ r"""SQL agent with code-side checks: retry loop + smarter error hints + value ch
 
 Quick test from the project root:
     python src\agent_checked.py "How many products are in the category 'perfumery' (English category name)?"
+Pass db_path and schema to run_agent() to use a different database.
 """
 import difflib
 import os
 import re
 import sys
 
-from baseline import SYSTEM_PROMPT, get_client, parse_reply
+from baseline import SYSTEM_PROMPT, build_system_prompt, get_client, parse_reply
 from db import QueryError, run_query
 
 MAX_STEPS = 4
 LIT_RE = re.compile(r"(?:\w+\.)?(\w+)\s*=\s*'([^']*)'")
 
 
-def _tables() -> list:
-    return [r[0] for r in run_query("SELECT name FROM sqlite_master WHERE type='table'")["rows"]]
+def _q(name: str) -> str:
+    return name.replace('"', '""')
 
 
-def _columns(table: str) -> list:
-    return [r[0] for r in run_query(f"SELECT name FROM pragma_table_info('{table}')")["rows"]]
+def _tables(db) -> list:
+    sql = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+    return [r[0] for r in run_query(sql, db_path=db)["rows"]]
 
 
-def _owners(col: str) -> list:
-    return [t for t in _tables() if col in _columns(t)]
+def _columns(table: str, db) -> list:
+    sql = f"SELECT name FROM pragma_table_info('{table.replace(chr(39), chr(39) * 2)}')"
+    return [r[0] for r in run_query(sql, db_path=db)["rows"]]
 
 
-def error_hint(msg: str) -> str:
-    m = re.search(r"no such column: (?:\w+\.)?(\w+)", msg)
-    if m:
-        col = m.group(1)
-        owners = _owners(col)
-        if owners:
-            return (f"Hint: the column '{col}' is not in the table you used it with. "
-                    f"It exists in: {', '.join(owners)}. Join that table.")
-        return f"Hint: no table has a column named '{col}'. Check the schema."
-    if "no such table" in msg:
-        return f"Hint: the tables are: {', '.join(_tables())}."
+def _owners(col: str, db) -> list:
+    return [t for t in _tables(db) if col in _columns(t, db)]
+
+
+def error_hint(msg: str, db=None) -> str:
+    try:
+        m = re.search(r"no such column: (?:\w+\.)?(\w+)", msg)
+        if m:
+            col = m.group(1)
+            owners = _owners(col, db)
+            if owners:
+                return (f"Hint: the column '{col}' is not in the table you used it with. "
+                        f"It exists in: {', '.join(owners)}. Join that table.")
+            return f"Hint: no table has a column named '{col}'. Check the schema."
+        if "no such table" in msg:
+            return f"Hint: the tables are: {', '.join(_tables(db))}."
+    except QueryError:
+        pass
     return ""
 
 
-def value_hint(sql: str) -> str:
+def value_hint(sql: str, db=None) -> str:
     """If a filter like col = 'text' matches nothing but a close value exists, say so."""
     for col, lit in LIT_RE.findall(sql):
-        owners = _owners(col)
-        if not owners:
-            continue
         try:
-            if any(run_query(f"SELECT 1 FROM \"{t}\" WHERE \"{col}\" = '{lit}' LIMIT 1")["rows"]
-                   for t in owners):
+            owners = _owners(col, db)
+            if not owners:
+                continue
+            if any(run_query(f'SELECT 1 FROM "{_q(t)}" WHERE "{_q(col)}" = \'{lit}\' LIMIT 1',
+                             db_path=db)["rows"] for t in owners):
                 continue
             pool = []
             for t in owners:
                 pool += [str(r[0]) for r in run_query(
-                    f'SELECT DISTINCT "{col}" FROM "{t}" WHERE "{col}" IS NOT NULL LIMIT 5000')["rows"]]
+                    f'SELECT DISTINCT "{_q(col)}" FROM "{_q(t)}" '
+                    f'WHERE "{_q(col)}" IS NOT NULL LIMIT 5000', db_path=db)["rows"]]
         except QueryError:
             continue
         close = difflib.get_close_matches(lit, pool, n=3, cutoff=0.8)
@@ -64,10 +75,11 @@ def value_hint(sql: str) -> str:
     return ""
 
 
-def run_agent(question: str, max_steps: int = MAX_STEPS) -> dict:
+def run_agent(question: str, max_steps: int = MAX_STEPS, db_path=None, schema=None) -> dict:
     client = get_client()
+    prompt = build_system_prompt(schema) if schema is not None else SYSTEM_PROMPT
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": prompt},
         {"role": "user", "content": question},
     ]
     last_sql = None
@@ -84,12 +96,12 @@ def run_agent(question: str, max_steps: int = MAX_STEPS) -> dict:
         last_sql = pred["sql"]
         messages.append({"role": "assistant", "content": raw})
         try:
-            result = run_query(last_sql)
+            result = run_query(last_sql, db_path=db_path)
         except QueryError as e:
-            feedback = (f"That query failed with this error: {e}\n{error_hint(str(e))}\n"
+            feedback = (f"That query failed with this error: {e}\n{error_hint(str(e), db_path)}\n"
                         "Reply with only the corrected SQL query.")
         else:
-            hint = value_hint(last_sql)
+            hint = value_hint(last_sql, db_path)
             if hint:
                 feedback = f"The query ran, but: {hint}\nReply with only the corrected SQL query."
             elif not result["rows"]:
