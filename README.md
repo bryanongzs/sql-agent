@@ -2,8 +2,6 @@
 
 Ask a question about a database in plain English. A local model (via Ollama) writes SQLite SQL, the agent runs it on a **read-only** connection, reads errors and suspicious results, and retries. It also accepts your own CSV or SQLite files (see "Bring your own data"). The point of this repo is the **measurement**: a fixed question set, strict scoring, and an honest account of what helped, what didn't, and where it still fails.
 
-![demo](docs/demo.gif) <!-- TODO: record a short GIF of `python src\app.py` and save it as docs\demo.gif -->
-
 ## Results
 
 Models: `qwen2.5-coder:7b` and `qwen2.5-coder:14b` through Ollama, 8k context, temperature 0, CPU only (16 GB RAM, no GPU). Scored by **execution accuracy**: the returned rows must match a hand-checked gold query. Scoring is strict: extra columns, or numbers returned as text, count as wrong.
