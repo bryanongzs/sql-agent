@@ -39,13 +39,19 @@ Analysis of the 7B one-shot baseline (13 of 46 questions failed), checked by han
 - **Output shape.** Correct logic, but an extra column or `'11'` instead of `11`. The strict scorer counts these as wrong (3 questions). I report this rather than loosening the scorer after seeing the failures.
 - **An unexplained refusal.** The 7B refused "How many unique customers live in the state of RJ?" in every configuration. I have not diagnosed why.
 
-<!-- TODO: add 2-3 lines on what the 14B still gets wrong, after running:
-     python eval\show_failures.py eval\results\checked_qwen-sql14.json -->
+**What the 14B (with retry loop and hints) still gets wrong.** 5 of 46 on the main set, checked against the gold queries (`python eval\show_failures.py eval\results\checked_qwen-sql14.json`):
+
+- **Wrong column.** For "average freight value" it averaged `price`, while naming the output column `average_freight_value`.
+- **Right idea, wrong query shape (2 questions).** For "how many orders contain more than one item" and "more than one payment type" it wrote `GROUP BY order_id HAVING ...` without wrapping it in an outer `COUNT(*)`, so the result has one row per matching order instead of a single count.
+- **Output shape.** For "which month of 2017 had the most orders" it returned the month from `strftime('%m', ...)` as text instead of an integer, which the strict scorer rejects.
+- **A wrong refusal.** It refused "How many unique customers (people) placed more than one order?" even though its own refusal message called the query correct.
+
+On the held-out set the 14B got 10 of 15: 4 wrong results and 1 question it answered when it should have refused.
 
 ## Limitations
 
 - **Small eval set.** 46 main questions plus 15 held-out. The code-side hints were designed after seeing failures on the main set, so main-set gains are flattered. The held-out questions use the same database and were also written after seeing those failures, so they are "held out from the hints", not independent.
-- **Only one database is measured at scale.** All the numbers in the results table are on Olist. The upload feature (below) was tried on one other dataset with a handful of questions, which shows it can work on new data but is too small to give a reliable accuracy figure.
+- **Only one database is measured.** All the numbers in the results table are on Olist. The upload feature (below) is covered by unit tests, but its accuracy on other databases has not been measured.
 - **Gold queries** were drafted with an AI assistant and verified by me against the data. Some questions may still be ambiguous (ties, "most" by rows vs by orders).
 - **Local models only.** Results are for the named Qwen models. A stronger hosted model would likely score higher; I did not measure one.
 
@@ -58,10 +64,10 @@ How it works (`src/schema_tools.py`):
 - The schema description is generated from the data: row counts, column types, NULL counts, a few sample values per column, declared foreign keys if there are any, and a list of column names shared between tables (likely join keys). If the description gets too long for the model's context, the sample values are dropped.
 - The same agent, safety layer and code-side hints run on the upload. Queries use the read-only connection, so uploaded data can't be modified.
 
-**What I tested.** I tried it on one other dataset: **[TODO: dataset name, number of tables, license]**, with **[TODO: N]** questions whose answers I worked out by hand from the CSVs before asking. Result: **[TODO: X of N correct]** with `[TODO: model name]`. **[TODO: 1-2 sentences on what failed, e.g. wrong join, double counting, a question that should have been refused.]**
+**What I tested.** The upload path is covered by unit tests (`tests/test_upload.py`): CSV loading and schema generation, duplicate column names, the read-only guarantee on uploaded databases, the file-count limit, unsupported file types, header-only CSVs, and single SQLite files. **I have not measured text-to-SQL accuracy on any database other than Olist**, so treat this feature as a working pipeline, not a benchmarked result.
 
 **Limits, stated plainly:**
-- This is a small test, not a benchmark. It shows the pipeline works on data it was not built for. It does not give a reliable accuracy number.
+- Accuracy on uploaded data is unmeasured. The tests check that files load and are described correctly, not that the generated SQL is right.
 - CSVs have no declared keys, so the agent guesses joins from matching column names. Tables whose keys have different names, or columns whose meaning is not obvious from the name (like Olist's `customer_id`), are where I'd expect it to fail.
 - Your files stay on your machine, but the schema, including a few sample values per column, is sent to whatever server `LLM_BASE_URL` points at. With local Ollama that is your own computer.
 - Not supported: schema-only upload (without data there is nothing to run), and a mix of CSV and SQLite files.
@@ -75,14 +81,14 @@ Read-only SQLite connection (`mode=ro`), `SELECT`/`WITH` only, a single statemen
 Windows Command Prompt syntax; paths and `set` differ on macOS/Linux (use `export VAR=value` and `source .venv/bin/activate`).
 
 ```bat
-git clone https://github.com/<your-username>/<your-repo>
-cd <your-repo>
+git clone https://github.com/bryanongzs/sql-agent
+cd sql-agent
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-1. Download the [Olist Brazilian E-Commerce dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) from Kaggle into `data\raw\`. License: **TODO: copy the license line from the Kaggle page.** The raw files are not committed.
+1. Download the [Olist Brazilian E-Commerce dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) from Kaggle into `data\raw\`. License: CC BY-NC-SA 4.0 (non-commercial, share-alike), as listed on the dataset page. The raw files are not committed.
 2. Build the database and the schema description:
    ```bat
    python src\build_db.py
